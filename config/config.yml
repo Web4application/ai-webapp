@@ -1,0 +1,16 @@
+
+---
+
+### 📦 Dockerfile (Optional)
+
+```Dockerfile
+FROM python:3.10-slim
+
+WORKDIR /app
+COPY . /app
+
+RUN python -m venv .venv && \
+    .venv/bin/pip install --upgrade pip && \
+    .venv/bin/pip install -r requirements.txt
+
+ENTRYPOINT [".venv/bin/python", "-m", "kubu_hai"]
