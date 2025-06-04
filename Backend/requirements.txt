@@ -1,1 +1,4 @@
 # requirements.txt for backend
+fastapi
+uvicorn[standard]
+pytest
