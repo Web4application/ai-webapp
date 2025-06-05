@@ -1,0 +1,5 @@
+# config.yaml
+model: "gpt-4.1"
+max_tokens: 800
+temperature: 0.7
+prompt_type: "extract_action_items"

@@ -1,0 +1,102 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: script-analyzer
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nodebot-deployment
+  namespace: script-analyzer
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nodebot
+  template:
+    metadata:
+      labels:
+        app: nodebot
+    spec:
+      containers:
+        - name: nodebot
+          image: yourusername/script-analyzer-node:latest
+          ports:
+            - containerPort: 3000
+          env:
+            - name: PYBACKEND_HOST
+              value: "pybackend-service"
+            - name: NODE_ENV
+              value: "production"
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: nodebot-service
+  namespace: script-analyzer
+spec:
+  selector:
+    app: nodebot
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
+  type: LoadBalancer
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pybackend-deployment
+  namespace: script-analyzer
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: pybackend
+  template:
+    metadata:
+      labels:
+        app: pybackend
+    spec:
+      containers:
+        - name: pybackend
+          image: yourusername/script-analyzer-python:latest
+          ports:
+            - containerPort: 8000
+          env:
+            - name: PYTHON_ENV
+              value: "production"
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: pybackend-service
+  namespace: script-analyzer
+spec:
+  selector:
+    app: pybackend
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 8000
+  clusterIP: None

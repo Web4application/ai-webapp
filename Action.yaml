@@ -1,0 +1,12 @@
+---
+## ✅ Now Create GitHub Repo
+
+Here’s what to do:
+
+```bash
+git init
+git add .
+git commit -m "Initial commit: Script Analyzer Bot 💻"
+git commit -m "Added files from phone"
+gh repo create personal-script-analyzer-bot --public --source=. --remote=origin
+git push -u origin main

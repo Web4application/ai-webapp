@@ -1,0 +1,13 @@
+numpy
+pandas
+scikit-learn
+matplotlib
+seaborn
+flask
+joblib
+tensorflow
+torch
+transformers
+speechrecognition
+gTTS
+pyaudio

@@ -1,0 +1,38 @@
+{
+  "name": "script-analyzer-bot",
+  "version": "1.0.0",
+  "description": "An AI assistant bot that analyzes JavaScript file dependencies and suggests execution order.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "jest",
+    "lint": "eslint ."
+  },
+  "keywords": [
+    "bot",
+    "script",
+    "analyzer",
+    "javascript",
+    "dependency-graph",
+    "ai",
+    "openai",
+    "botframework"
+  ],
+  "author": "Kubu Lee",
+  "license": "MIT",
+  "dependencies": {
+    "botbuilder": "^4.21.0",
+    "express": "^4.18.2",
+    "axios": "^1.6.7",
+    "dotenv": "^16.4.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.3",
+    "jest": "^29.7.0",
+    "eslint": "^8.57.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
