@@ -30,3 +30,118 @@ jobs:
       - name: Run Tests
         run: |
           pytest --disable-warnings --cov=.
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+
+jobs:
+# 1️⃣  Lint + Unit Tests --------------------------------------------------
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ runner.os }}-${{ hashFiles('backend/requirements.txt') }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - run: pip install -r backend/requirements.txt
+      - run: pytest backend/tests --junitxml=reports/test-results.xml
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: reports/test-results.xml
+
+# 2️⃣  Build & Push Container --------------------------------------------
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up QEMU (multi-arch)
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: backend/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/yourdockerrepo/ai-webapp/backend:${{ github.sha }}
+            ghcr.io/yourdockerrepo/ai-webapp/backend:${{ github.ref_name }}
+          cache-from: type=registry,ref=ghcr.io/yourdockerrepo/ai-webapp/cache:latest
+          cache-to:   type=registry,ref=ghcr.io/yourdockerrepo/ai-webapp/cache:latest,mode=max
+
+# 3️⃣  Vulnerability Scan -------------------------------------------------
+  scan:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: aquasecurity/trivy-action@0.16.1
+        with:
+          image-ref: ghcr.io/yourdockerrepo/ai-webapp/backend:${{ github.sha }}
+          format: table
+          exit-code: 1           # fail the build if critical vulns found
+          ignore-unfixed: true
+
+# 4️⃣  Deploy to Kubernetes (prod) ---------------------------------------
+  deploy:
+    needs: [build, scan]
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://ai-webapp.example.com   # shows up in PR checks
+
+    permissions:
+      id-token: write     # for OIDC
+      contents: read
+
+    steps:
+      - name: Authenticate to cluster (OIDC)
+        uses: azure/aks-set-context@v4
+        with:
+          resource-group: rg-ai-webapp
+          cluster-name: prod-ai-cluster
+
+      - name: Checkout Helm chart
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            helm-chart
+
+      - name: Deploy with Helm
+        working-directory: helm-chart
+        run: |
+          helm upgrade --install ai-webapp . \
+            --set backend.image.tag=${{ github.sha }}
+
