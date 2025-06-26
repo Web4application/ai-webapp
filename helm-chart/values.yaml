@@ -1,0 +1,7 @@
+backend:
+  image:
+    repository: ghcr.io/yourdockerrepo/ai-webapp/backend
+    tag: "latest"
+  service:
+    port: 8000
+  replicaCount: 2
